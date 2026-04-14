@@ -7,6 +7,9 @@ hasCJKLanguage         = true
 [pagination]
     pagerSize = 10
 
+[outputs]
+    home = ["HTML", "RSS", "JSON"]
+
 [permalinks]
     post = "/p/:slug/"
     page = "/:slug/"

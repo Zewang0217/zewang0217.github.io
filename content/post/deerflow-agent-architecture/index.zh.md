@@ -68,20 +68,88 @@ Agent 由三部分组成：
 
 **Prompt**: 动态生成的 system prompt，包含 Skills、Memory、Subagent 指引
 
-### CompiledStateGraph
+### CompiledStateGraph：为什么是单节点图？
 
 Agent 本质是 LangGraph 的 `CompiledStateGraph`：
 
 ```python
-agent = (
-    StateGraph(ThreadState)
-    .add_node("agent", agent_node)
-    .add_edge(START, "agent")
-    .compile(checkpointer=checkpointer)
+# create_agent 来自 langchain.agents
+from langchain.agents import create_agent
+
+return create_agent(
+    model=model,
+    tools=tools,
+    middleware=middlewares,
+    system_prompt=prompt,
+    state_schema=ThreadState,
 )
 ```
 
-这意味着 Agent 是一个有状态的图，只有一个节点 "agent"，从 START 到 agent 再结束。
+**你可能疑惑：为什么只有一个节点？**
+
+LangGraph 理论上支持复杂的多节点图（planning → execution → reflection），但 DeerFlow 只用了一个 "agent" 节点。原因如下：
+
+#### 1. ReAct 循环由 LangGraph 内部处理
+
+`create_agent` 是 LangChain 提供的 ReAct agent 构建函数。它内部已经实现了：
+
+```
+思考 → 工具调用 → 观察 → 再思考（自动循环）
+```
+
+你不需要手动构建这种循环图。LangGraph 会自动：
+- 调用 Model 获取 response
+- 如果有 tool_calls，执行工具
+- 将工具结果追加到 messages
+- 再次调用 Model
+- 直到 response 没有 tool_calls
+
+所以"单节点"不意味着简单，复杂逻辑在内部循环中。
+
+#### 2. Middleware 模式比多节点图更灵活
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 多节点图 | 流程可视化 | 每次修改要改图结构，状态分散，调试困难 |
+| Middleware Chain | 动态组合、职责单一、易扩展 | 需要 Middleware 框架支持 |
+
+DeerFlow 选择 Middleware Chain：
+- 14 个 Middleware 按需启用/禁用（通过 features 配置）
+- 职责单一：每个 Middleware 只做一件事
+- 新增功能只需添加新 Middleware，不改图结构
+- 执行顺序清晰：注册顺序即执行顺序
+
+#### 3. 状态管理简化
+
+单节点 + ThreadState：
+- 只有一个状态容器（`ThreadState`）
+- 所有 Middleware 读写同一个状态
+- 进出一趟，状态清晰
+
+多节点图意味着：
+- 状态在节点间流转
+- 需要中间状态字段（如 `planning_result`、`reflection_notes`）
+- 调试时很难追踪状态变化
+
+#### 4. Checkpointer 开箱即用
+
+LangGraph 的 checkpointer 提供状态持久化：
+- 单节点图也能享受这个功能
+- ThreadState 在每次执行前后自动保存
+- 支持恢复、回滚、时间旅行调试
+
+#### 5. 为扩展留空间
+
+单节点不排斥未来扩展：
+- 可以随时添加 planning、reflection 节点
+- Subagent 其实就是一种"多 agent"的变体
+- DeerFlow 用 Middleware 模式，比硬编码节点更灵活
+
+**总结**：DeerFlow 选择"单节点 + Middleware Chain"而非"多节点图"，是因为：
+1. ReAct 循环已内置，无需手动构建
+2. Middleware 比节点更灵活、更易扩展
+3. 单一状态容器简化状态管理
+4. Checkpointer 自动工作
 
 ---
 
