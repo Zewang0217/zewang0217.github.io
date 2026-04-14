@@ -1,0 +1,12 @@
+baseURL                = "https://zewang0217.github.io/"
+languageCode           = "zh-cn"
+title                  = "Zewang's Blog"
+defaultContentLanguage = "zh"
+hasCJKLanguage         = true
+
+[pagination]
+    pagerSize = 10
+
+[permalinks]
+    post = "/p/:slug/"
+    page = "/:slug/"

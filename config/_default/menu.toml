@@ -1,0 +1,15 @@
+[[social]]
+    identifier = "github"
+    name       = "GitHub"
+    url        = "https://github.com/Zewang0217"
+
+    [social.params]
+        icon = "brand-github"
+
+[[social]]
+    identifier = "email"
+    name       = "Email"
+    url        = "mailto:Zewang0217@outlook.com"
+
+    [social.params]
+        icon = "mail"

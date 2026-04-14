@@ -1,28 +1,42 @@
-![image](https://user-images.githubusercontent.com/5889006/190859441-141b5f81-8483-40d2-bd96-ebf85616a46d.png)
+# Zewang's Blog
 
-# Hugo Theme Stack
+个人博客站点，使用 Hugo + Stack 主题构建。
 
-<img align="right" width="150" alt="logo" src="https://user-images.githubusercontent.com/5889006/190859553-5b229b4f-c476-4cbd-928f-890f5265ca4c.png">
+## 站点信息
 
-Card-style Hugo theme designed for bloggers.
+- **标题**: Zewang's Blog
+- **描述**: 技术笔记 · 作品展示
+- **地址**: https://zewang0217.github.io/
 
-## Quickstart
+## 部署
 
-Use this template: [CaiJimmy/hugo-theme-stack-starter](https://github.com/CaiJimmy/hugo-theme-stack-starter)
+站点通过 GitHub Actions 自动部署到 GitHub Pages。
 
-## Demo
+推送代码到 `master` 分支后会自动触发构建。
 
-Check [demo.stack.cai.im](https://demo.stack.cai.im)
+## 本地开发
 
-## Documentation
+```bash
+# 安装 Hugo (需要 extended 版本)
+# macOS: brew install hugo
+# Linux: 参见 https://gohugo.io/installation/
 
-- [English](https://stack.cai.im)
-- [中文](https://stack.cai.im/zh)
+# 本地运行
+hugo server -D
 
-## Copyright
+# 构建
+hugo --gc --minify
+```
 
-**Licensed under the GNU General Public License v3.0**
+## 内容结构
 
-Please do not remove the "*Theme Stack designed by Jimmy*" text and link.
+```
+content/
+├── post/          # 博客文章
+├── page/          # 独立页面（关于、归档、搜索）
+└── categories/    # 分类
+```
 
-If you want to port this theme to another blogging platform, please let me know🙏.
+## 主题信息
+
+基于 [Hugo Theme Stack](https://github.com/CaiJimmy/hugo-theme-stack) 主题。
