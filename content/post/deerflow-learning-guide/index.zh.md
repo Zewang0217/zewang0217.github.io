@@ -6,7 +6,7 @@ slug: "deerflow-learning-guide"
 tags:
     - AI
     - Agent
-    - LangGraph
+    - DeerFlow
     - 开源项目
 categories:
     - 技术笔记
