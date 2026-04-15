@@ -1008,3 +1008,127 @@ class MySandboxProvider(SandboxProvider):
 sandbox:
   use: my_package:MySandboxProvider
 ```
+
+---
+
+## 补充：Sandbox 生命周期管理
+
+### Tool 注册 vs Sandbox 创建
+
+Tool 是静态注册的，Sandbox 是动态创建的：
+
+```python
+# Tool 注册：Agent 启动时就存在
+@tool("bash", parse_docstring=True)
+def bash_tool(runtime, description, command):
+    sandbox = ensure_sandbox_initialized(runtime)  # ← 这里才创建 Sandbox
+    ...
+```
+
+**惰性初始化**：第一次调用任何 tool 时才创建容器，而不是预先创建。
+
+```python
+def ensure_sandbox_initialized(runtime):
+    sandbox_id = runtime.state.get("sandbox_id")
+    
+    if sandbox_id:
+        # 已存在 → 直接获取
+        return provider.get(sandbox_id)
+    
+    # 不存在 → 创建新的
+    sandbox_id = provider.acquire(thread_id)
+    runtime.state["sandbox_id"] = sandbox_id
+    return provider.get(sandbox_id)
+```
+
+---
+
+### 容器生命周期流程图
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 Thread/Session                       │
+│                                                     │
+│  1. 用户发起对话                                     │
+│     ↓                                               │
+│  2. Agent 第一次调用 tool                           │
+│     ↓                                               │
+│  3. ensure_sandbox_initialized()                    │
+│     → provider.acquire(thread_id)                   │
+│     → 创建容器（或从 Warm Pool 取）                  │
+│     ↓                                               │
+│  4. 执行 tool 操作...                               │
+│     ↓                                               │
+│  5. 继续调用其他 tool                               │
+│     → provider.get(sandbox_id) ← 直接返回已有容器   │
+│     ↓                                               │
+│  6. Session 结束                                    │
+│     → provider.release(sandbox_id)                  │
+│     → 放回 Warm Pool（不删除）                       │
+│                                                     │
+│  ─────────────────────────────────────────────────  │
+│                                                     │
+│  Warm Pool 中的容器：                                │
+│  - 等待 idle_timeout（如 30 分钟）                   │
+│  - 超时 → backend.destroy() → 删除容器              │
+│  - 下次 acquire → 直接从池中取出（快速复用）         │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### AioSandboxProvider 的管理逻辑
+
+```python
+class AioSandboxProvider:
+    _sandboxes: dict[str, AioSandbox] = {}  # 活跃的 sandbox
+    _last_used: dict[str, float] = {}       # 最后使用时间
+    
+    def acquire(self, thread_id):
+        sandbox_id = deterministic_id(thread_id)
+        
+        # 1. 检查是否已有活跃的
+        if sandbox_id in self._sandboxes:
+            return sandbox_id
+        
+        # 2. 尝试从 Warm Pool 恢复（容器可能还在运行）
+        info = backend.discover(sandbox_id)
+        if info:
+            # 容器还在，直接复用
+            self._sandboxes[sandbox_id] = AioSandbox(info)
+            return sandbox_id
+        
+        # 3. 真正创建新容器
+        info = backend.create(thread_id, sandbox_id)
+        self._sandboxes[sandbox_id] = AioSandbox(info)
+        return sandbox_id
+    
+    def release(self, sandbox_id):
+        # 不删除，只是记录时间，等待下次复用
+        self._last_used[sandbox_id] = time.now()
+    
+    def cleanup_idle(self):
+        # 定期清理超时的容器
+        for sandbox_id, last_used in self._last_used.items():
+            if time.now() - last_used > idle_timeout:
+                backend.destroy(self._sandboxes[sandbox_id].info)
+                del self._sandboxes[sandbox_id]
+                del self._last_used[sandbox_id]
+```
+
+---
+
+### 生命周期关键时机
+
+| 时机 | 操作 | 说明 |
+|------|------|------|
+| 第一次调用 tool | `acquire` | 创建容器（或从 Warm Pool 取） |
+| 后续调用 tool | `get` | 返回已有容器 |
+| Session 结束 | `release` | 放回 Warm Pool，不删除 |
+| idle_timeout 超时 | `destroy` | 真正删除容器 |
+
+**核心设计思想**：
+
+1. **惰性创建**：不预先创建，第一次用才创建，节省资源
+2. **Warm Pool**：release 不删，保留复用，减少下次的冷启动时间
+3. **确定性 ID**：`sha256(thread_id)[:8]`，即使跨进程也能找到同一容器
