@@ -234,20 +234,31 @@ allowed-tools:
 
 ### 2.4 Tools 工具集
 
+> [!NOTE]
+> 详细笔记已发布：[Deer-Flow Tools 工具集详解](/post/deer-flow-series-tools/)
+
 **核心文件**：`backend/packages/harness/deerflow/tools/`
 
-工具分为四类：
+工具分为五类：
 
-| 类型 | 来源 | 示例 |
-|-----|------|------|
-| Built-in | `tools/builtins/` | present_files, ask_clarification, view_image |
-| Sandbox | `sandbox/tools.py` | bash, read_file, write_file, str_replace, ls |
-| Config | `config.yaml` | web_search, web_fetch |
-| MCP | `extensions_config.json` | github, filesystem, postgres |
+|| 类型 | 来源 | 加载条件 | 示例 |
+||-----|------|----------|------|
+|| Built-in | `tools/builtins/` | 无 | present_files, ask_clarification |
+|| Subagent | `tools/builtins/task_tool.py` | `subagent_enabled=True` | task |
+|| Config | `config.yaml` | 按 groups 过滤 | web_search, web_fetch |
+|| MCP | `extensions_config.json` | `include_mcp=True` | github, filesystem |
+|| ACP | ACP 配置 | 有 ACP 代理 | invoke_acp_agent |
+
+**核心设计亮点**：
+1. **分层加载**：Config → Builtin → MCP → ACP
+2. **延迟发现**：大量 MCP 工具时，按需获取 schema
+3. **子代理隔离**：`subagent_enabled=False` 防止递归嵌套
+4. **安全沙箱**：`is_host_bash_allowed()` 控制 host bash
 
 **学习重点**：
 - 理解 `get_available_tools()` 如何组装工具集
-- 查看 `community/` 目录的第三方工具实现
+- 掌握延迟工具发现机制 (`tool_search`)
+- 查看 `builtins/` 目录的内置工具实现
 - 尝试通过 MCP Server 添加新工具
 
 ---
