@@ -602,7 +602,7 @@ make down   # 停止并清理
 | 03 | Sandbox 系统深入 | provider pattern、路径映射、隔离机制 |
 | 04 | Skills 设计与实践 | 格式规范、加载机制、自定义开发 |
 | 05 | LangGraph 运行时 | graph 抽象、SSE 流式、checkpointing |
-| 06 | Subagents 并行执行 | 任务拆解、线程池、结果合并 |
+|| 06 | Subagents 并行执行 | 任务拆解、线程池、结果合并 | ✅ 已完成 |
 | 07 | Memory 系统原理 | fact 提取、去重策略、注入机制 |
 | 08 | MCP 工具集成 | server 配置、lazy init、OAuth 流程 |
 | 09 | IM Channels 实现 | message bus、thread 映射、平台适配 |
