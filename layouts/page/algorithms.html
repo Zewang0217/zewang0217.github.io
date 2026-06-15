@@ -1,0 +1,256 @@
+{{ define "body-class" }}template-algorithms{{ end }}
+
+{{ define "main" }}
+    {{ $problems := .Site.Data.algorithms.problem | default slice }}
+
+    {{/* ===== 统计计算 ===== */}}
+    {{ $total := len $problems }}
+
+    {{/* 按难度统计 */}}
+    {{ $easyCount := 0 }}{{ $mediumCount := 0 }}{{ $hardCount := 0 }}
+    {{ range $problems }}
+        {{ if eq .difficulty "Easy" }}{{ $easyCount = add $easyCount 1 }}
+        {{ else if eq .difficulty "Medium" }}{{ $mediumCount = add $mediumCount 1 }}
+        {{ else if eq .difficulty "Hard" }}{{ $hardCount = add $hardCount 1 }}
+        {{ end }}
+    {{ end }}
+
+    {{/* 按掌握度统计 */}}
+    {{ $knownCount := 0 }}{{ $graspCount := 0 }}{{ $familiarCount := 0 }}{{ $reviewCount := 0 }}
+    {{ range $problems }}
+        {{ if eq .mastery "了解" }}{{ $knownCount = add $knownCount 1 }}
+        {{ else if eq .mastery "掌握" }}{{ $graspCount = add $graspCount 1 }}
+        {{ else if eq .mastery "熟悉" }}{{ $familiarCount = add $familiarCount 1 }}
+        {{ else if eq .mastery "需复习" }}{{ $reviewCount = add $reviewCount 1 }}
+        {{ end }}
+    {{ end }}
+
+    {{/* 按标签统计 */}}
+    {{ $.Scratch.Delete "tagCounts" }}
+    {{ $uniqueTags := slice }}
+    {{ range $problems }}
+        {{ if .tags }}
+            {{ range .tags }}
+                {{ $tag := . }}
+                {{ $key := printf "tagcnt_%s" $tag }}
+                {{ $cur := $.Scratch.Get $key | default 0 }}
+                {{ $.Scratch.Set $key (add $cur 1) }}
+                {{ if not (in $uniqueTags $tag) }}
+                    {{ $uniqueTags = $uniqueTags | append $tag }}
+                {{ end }}
+            {{ end }}
+        {{ end }}
+    {{ end }}
+    {{ $tagItems := slice }}
+    {{ range $uniqueTags }}
+        {{ $key := printf "tagcnt_%s" . }}
+        {{ $cnt := $.Scratch.Get $key | default 0 }}
+        {{ $tagItems = $tagItems | append (dict "name" . "count" $cnt) }}
+    {{ end }}
+    {{ $tagItems = sort $tagItems "count" "desc" | first 10 }}
+
+    {{/* 本周题数 */}}
+    {{ $now := now }}
+    {{ $weekdayName := $now.Format "Monday" }}
+    {{ $weekdayInt := 0 }}
+    {{ if eq $weekdayName "Monday" }}{{ $weekdayInt = 1 }}
+    {{ else if eq $weekdayName "Tuesday" }}{{ $weekdayInt = 2 }}
+    {{ else if eq $weekdayName "Wednesday" }}{{ $weekdayInt = 3 }}
+    {{ else if eq $weekdayName "Thursday" }}{{ $weekdayInt = 4 }}
+    {{ else if eq $weekdayName "Friday" }}{{ $weekdayInt = 5 }}
+    {{ else if eq $weekdayName "Saturday" }}{{ $weekdayInt = 6 }}
+    {{ end }}
+    {{ $subDays := mul -1 $weekdayInt }}
+    {{ $weekStart := $now.AddDate 0 0 $subDays }}
+    {{ $weekCount := 0 }}
+    {{ range $problems }}
+        {{ $pDate := time .date }}
+        {{ if ge $pDate $weekStart }}
+            {{ $weekCount = add $weekCount 1 }}
+        {{ end }}
+    {{ end }}
+
+    {{/* 按日期降序排列并收集唯一日期 */}}
+    {{ $sorted := sort $problems "date" "desc" }}
+    {{ $dates := slice }}
+    {{ range $sorted }}
+        {{ if not (in $dates .date) }}
+            {{ $dates = $dates | append .date }}
+        {{ end }}
+    {{ end }}
+
+    {{/* ===== 页面渲染 ===== */}}
+    <header class="alg-header">
+        <h1 class="alg-title">{{ .Title }}</h1>
+        {{ with .Params.description }}
+            <p class="alg-description">{{ . }}</p>
+        {{ end }}
+    </header>
+
+    {{ if eq $total 0 }}
+        <div class="alg-empty">
+            <p>还没有刷题记录，从今天开始吧！🚀</p>
+            <p class="alg-empty-hint">编辑 <code>data/algorithms.toml</code> 添加第一条记录。</p>
+        </div>
+    {{ else }}
+        {{/* 统计卡片区 */}}
+        <section class="alg-stats-grid">
+            <div class="alg-stat-card">
+                <span class="alg-stat-number">{{ $total }}</span>
+                <span class="alg-stat-label">总题数</span>
+            </div>
+            <div class="alg-stat-card">
+                <span class="alg-stat-number">{{ $weekCount }}</span>
+                <span class="alg-stat-label">本周新增</span>
+            </div>
+            <div class="alg-stat-card alg-stat-card--easy">
+                <span class="alg-stat-number">{{ $easyCount }}</span>
+                <span class="alg-stat-label">Easy</span>
+            </div>
+            <div class="alg-stat-card alg-stat-card--medium">
+                <span class="alg-stat-number">{{ $mediumCount }}</span>
+                <span class="alg-stat-label">Medium</span>
+            </div>
+            <div class="alg-stat-card alg-stat-card--hard">
+                <span class="alg-stat-number">{{ $hardCount }}</span>
+                <span class="alg-stat-label">Hard</span>
+            </div>
+            <div class="alg-stat-card alg-stat-card--familiar">
+                <span class="alg-stat-number">{{ $familiarCount }}</span>
+                <span class="alg-stat-label">熟悉</span>
+            </div>
+            <div class="alg-stat-card alg-stat-card--review">
+                <span class="alg-stat-number">{{ $reviewCount }}</span>
+                <span class="alg-stat-label">需复习</span>
+            </div>
+        </section>
+
+        {{/* 掌握度进度条 */}}
+        <section class="alg-mastery-section">
+            <h2 class="alg-section-title">掌握度分布</h2>
+            <div class="alg-mastery-bars">
+                {{ if gt $familiarCount 0 }}
+                <div class="alg-mastery-row">
+                    <span class="alg-mastery-label alg-mastery-label--familiar">熟悉</span>
+                    <div class="alg-mastery-track">
+                        <div class="alg-mastery-fill alg-mastery-fill--familiar" style="width: {{ div (mul $familiarCount 100) $total }}%"></div>
+                    </div>
+                    <span class="alg-mastery-count">{{ $familiarCount }}</span>
+                </div>
+                {{ end }}
+                {{ if gt $graspCount 0 }}
+                <div class="alg-mastery-row">
+                    <span class="alg-mastery-label alg-mastery-label--grasp">掌握</span>
+                    <div class="alg-mastery-track">
+                        <div class="alg-mastery-fill alg-mastery-fill--grasp" style="width: {{ div (mul $graspCount 100) $total }}%"></div>
+                    </div>
+                    <span class="alg-mastery-count">{{ $graspCount }}</span>
+                </div>
+                {{ end }}
+                {{ if gt $knownCount 0 }}
+                <div class="alg-mastery-row">
+                    <span class="alg-mastery-label alg-mastery-label--known">了解</span>
+                    <div class="alg-mastery-track">
+                        <div class="alg-mastery-fill alg-mastery-fill--known" style="width: {{ div (mul $knownCount 100) $total }}%"></div>
+                    </div>
+                    <span class="alg-mastery-count">{{ $knownCount }}</span>
+                </div>
+                {{ end }}
+                {{ if gt $reviewCount 0 }}
+                <div class="alg-mastery-row">
+                    <span class="alg-mastery-label alg-mastery-label--review">需复习</span>
+                    <div class="alg-mastery-track">
+                        <div class="alg-mastery-fill alg-mastery-fill--review" style="width: {{ div (mul $reviewCount 100) $total }}%"></div>
+                    </div>
+                    <span class="alg-mastery-count">{{ $reviewCount }}</span>
+                </div>
+                {{ end }}
+            </div>
+        </section>
+
+        {{/* 分类标签饼图 */}}
+        {{ if gt (len $tagItems) 0 }}
+        <section class="alg-tags-section">
+            <h2 class="alg-section-title">分类标签</h2>
+            <div class="alg-tags-chart">
+                {{/* Build conic-gradient stops */}}
+                {{ $palette := slice "#e64553" "#fe640b" "#df8e1d" "#40a02b" "#179299" "#209fb5" "#1e66f5" "#7287fd" "#8839ef" "#ea76cb" }}
+                {{ $totalTagged := 0 }}
+                {{ range $tagItems }}{{ $totalTagged = add $totalTagged .count }}{{ end }}
+                <div class="alg-pie"
+                    style="background: conic-gradient(
+                        {{ range $idx, $item := $tagItems }}
+                            {{ $pct := div (mul $item.count 100) $totalTagged }}
+                            {{ $cum := 0 }}
+                            {{ range $j, $prev := $tagItems }}
+                                {{ if lt $j $idx }}{{ $cum = add $cum (div (mul $prev.count 100) $totalTagged) }}{{ end }}
+                            {{ end }}
+                            {{ $end := add $cum $pct }}
+                            {{ if eq $idx (sub (len $tagItems) 1) }}{{ $end = 100 }}{{ end }}
+                            {{ index $palette $idx }} {{ $cum }}% {{ $end }}%{{ if lt $idx (sub (len $tagItems) 1) }},{{ end }}
+                        {{ end }}
+                    )">
+                </div>
+                <div class="alg-pie-legend">
+                    {{ range $idx, $item := $tagItems }}
+                    <div class="alg-legend-item">
+                        <span class="alg-legend-dot" style="background: {{ index $palette $idx }}"></span>
+                        <span class="alg-legend-name">{{ $item.name }}</span>
+                        <span class="alg-legend-count">{{ $item.count }}</span>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+        </section>
+        {{ end }}
+
+        {{/* 按日期分组的题目列表 */}}
+        <section class="alg-problems-section">
+            <h2 class="alg-section-title">刷题记录</h2>
+            {{ range $dates }}
+                {{ $currentDate := . }}
+                <div class="alg-date-group">
+                    <h3 class="alg-date-heading">
+                        {{ $parsedDate := time $currentDate }}
+                        {{ $parsedDate.Format "2006-01-02" }}
+                        <span class="alg-date-weekday">{{ $parsedDate.Weekday }}</span>
+                    </h3>
+                    <div class="alg-problem-list">
+                        {{ range where $sorted "date" $currentDate }}
+                            <div class="alg-problem-row">
+                                <div class="alg-problem-info">
+                                    <a href="{{ .url }}" target="_blank" rel="noopener" class="alg-problem-title">
+                                        {{ .id }}. {{ .title }}
+                                        {{ partial "helper/icon" "link" }}
+                                    </a>
+                                    <span class="alg-problem-meta">
+                                        <span class="alg-badge alg-badge--platform">{{ .platform }}</span>
+                                        <span class="alg-badge alg-badge--{{ lower .difficulty }}">{{ .difficulty }}</span>
+                                        {{ $masteryClass := "known" }}
+                                        {{ if eq .mastery "掌握" }}{{ $masteryClass = "grasp" }}
+                                        {{ else if eq .mastery "熟悉" }}{{ $masteryClass = "familiar" }}
+                                        {{ else if eq .mastery "需复习" }}{{ $masteryClass = "review" }}
+                                        {{ end }}
+                                        <span class="alg-badge alg-badge--{{ $masteryClass }}">{{ .mastery }}</span>
+                                    </span>
+                                </div>
+                                {{ with .note }}
+                                    <p class="alg-problem-note">{{ . }}</p>
+                                {{ end }}
+                                {{ with .tags }}
+                                    <div class="alg-problem-tags">
+                                        {{ range . }}
+                                            <span class="alg-tag">{{ . }}</span>
+                                        {{ end }}
+                                    </div>
+                                {{ end }}
+                            </div>
+                        {{ end }}
+                    </div>
+                </div>
+            {{ end }}
+        </section>
+    {{ end }}
+
+    {{ partialCached "footer/footer" . }}
+{{ end }}

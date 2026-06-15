@@ -13,3 +13,4 @@ hasCJKLanguage         = true
 [permalinks]
     post = "/p/:slug/"
     page = "/:slug/"
+    notes = "/notes/:slug/"

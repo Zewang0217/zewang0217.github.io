@@ -28,3 +28,452 @@
 code, pre, .highlight {
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+/* ============================================
+   算法仪表盘样式 — 配色: Catppuccin inspired
+   亮色: Latte accent | 暗色: Mocha accent
+   ============================================ */
+
+.alg-header {
+    margin-bottom: 2rem;
+}
+
+.alg-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--card-text-color-main);
+}
+
+.alg-description {
+    color: var(--card-text-color-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* 空状态 */
+.alg-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--card-background);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-l1);
+
+    p {
+        font-size: 1.2rem;
+        color: var(--card-text-color-secondary);
+        margin: 0.5rem 0;
+    }
+}
+
+.alg-empty-hint {
+    font-size: 0.9rem !important;
+
+    code {
+        background: var(--code-background-color);
+        padding: 0.15em 0.4em;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+}
+
+/* 统计卡片网格 */
+.alg-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+
+    @media (min-width: 600px) {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.alg-stat-card {
+    background: var(--card-background);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-l1);
+    padding: 1rem;
+    text-align: center;
+
+    &.alg-stat-card--easy {
+        border-top: 3px solid #40a02b;
+    }
+
+    &.alg-stat-card--medium {
+        border-top: 3px solid #df8e1d;
+    }
+
+    &.alg-stat-card--hard {
+        border-top: 3px solid #d20f39;
+    }
+
+    &.alg-stat-card--familiar {
+        border-top: 3px solid #40a02b;
+    }
+
+    &.alg-stat-card--review {
+        border-top: 3px solid #fe640b;
+    }
+}
+
+.alg-stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--card-text-color-main);
+    line-height: 1.2;
+}
+
+.alg-stat-label {
+    font-size: 0.85rem;
+    color: var(--card-text-color-secondary);
+    margin-top: 0.2rem;
+}
+
+/* 掌握度分布区 */
+.alg-mastery-section {
+    margin-bottom: 2rem;
+}
+
+.alg-section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--card-separator-color);
+    color: var(--card-text-color-main);
+}
+
+.alg-mastery-bars {
+    background: var(--card-background);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-l1);
+    padding: 1.2rem 1.5rem;
+}
+
+.alg-mastery-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.alg-mastery-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 3.5rem;
+    text-align: right;
+}
+
+.alg-mastery-label--familiar {
+    color: #40a02b;
+}
+
+.alg-mastery-label--grasp {
+    color: #1e66f5;
+}
+
+.alg-mastery-label--known {
+    color: #8c8fa1;
+}
+
+.alg-mastery-label--review {
+    color: #fe640b;
+}
+
+.alg-mastery-track {
+    flex: 1;
+    background: var(--code-background-color);
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.alg-mastery-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+
+    &--familiar {
+        background: #40a02b;
+    }
+
+    &--grasp {
+        background: #1e66f5;
+    }
+
+    &--known {
+        background: #9ca0b0;
+    }
+
+    &--review {
+        background: #fe640b;
+    }
+}
+
+.alg-mastery-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--card-text-color-secondary);
+    min-width: 1.5rem;
+    text-align: left;
+}
+
+/* 日期分组 */
+.alg-date-group {
+    margin-bottom: 1.5rem;
+}
+
+.alg-date-heading {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--card-text-color-main);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alg-date-weekday {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--card-text-color-secondary);
+}
+
+/* 题目列表 */
+.alg-problem-row {
+    background: var(--card-background);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-l1);
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    transition: box-shadow 0.2s ease;
+
+    &:hover {
+        box-shadow: var(--shadow-l2);
+    }
+}
+
+.alg-problem-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.alg-problem-title {
+    font-size: 1.02rem;
+    font-weight: 500;
+    color: var(--card-text-color-main);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+
+    &:hover {
+        color: var(--link-color);
+    }
+
+    .icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.5;
+    }
+}
+
+.alg-problem-meta {
+    display: inline-flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-left: 0.3rem;
+}
+
+/* 徽章 */
+.alg-badge {
+    display: inline-block;
+    padding: 0.12em 0.55em;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+
+    &--platform {
+        background: var(--code-background-color);
+        color: var(--card-text-color-secondary);
+    }
+
+    &--easy {
+        background: rgba(64, 160, 43, 0.15);
+        color: #2d6e1e;
+    }
+
+    &--medium {
+        background: rgba(223, 142, 29, 0.15);
+        color: #9b6215;
+    }
+
+    &--hard {
+        background: rgba(210, 15, 57, 0.15);
+        color: #a50c2e;
+    }
+
+    &--familiar {
+        background: rgba(64, 160, 43, 0.15);
+        color: #2d6e1e;
+    }
+
+    &--grasp {
+        background: rgba(30, 102, 245, 0.15);
+        color: #1a59d6;
+    }
+
+    &--known {
+        background: rgba(140, 143, 161, 0.15);
+        color: #6c7080;
+    }
+
+    &--review {
+        background: rgba(254, 100, 11, 0.15);
+        color: #c94d09;
+    }
+}
+
+/* 题目备注 */
+.alg-problem-note {
+    font-size: 0.88rem;
+    color: var(--card-text-color-secondary);
+    margin: 0.4rem 0 0 0;
+    padding-left: 0.2rem;
+    line-height: 1.6;
+}
+
+/* 标签 */
+.alg-problem-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+
+.alg-tag {
+    display: inline-block;
+    padding: 0.08em 0.45em;
+    border-radius: 3px;
+    font-size: 0.74rem;
+    color: var(--card-text-color-secondary);
+    background: var(--code-background-color);
+    font-family: var(--code-font-family);
+}
+
+/* ============================================
+   分类标签饼图
+   ============================================ */
+
+.alg-tags-section {
+    margin-bottom: 2rem;
+}
+
+.alg-tags-chart {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    background: var(--card-background);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-l1);
+    padding: 1.5rem;
+
+    @media (max-width: 599px) {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+.alg-pie {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alg-pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.alg-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+}
+
+.alg-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.alg-legend-name {
+    color: var(--card-text-color-main);
+    flex: 1;
+}
+
+.alg-legend-count {
+    color: var(--card-text-color-secondary);
+    font-weight: 600;
+    font-size: 0.82rem;
+    min-width: 1.2rem;
+    text-align: right;
+}
+
+/* ============================================
+   暗色模式适配 — Catppuccin Mocha accent
+   ============================================ */
+[data-scheme="dark"] {
+    .alg-stat-card {
+        &.alg-stat-card--easy { border-top-color: #a6e3a1; }
+        &.alg-stat-card--medium { border-top-color: #f9e2af; }
+        &.alg-stat-card--hard { border-top-color: #f38ba8; }
+        &.alg-stat-card--familiar { border-top-color: #a6e3a1; }
+        &.alg-stat-card--review { border-top-color: #fab387; }
+    }
+
+    .alg-mastery-label--familiar { color: #a6e3a1; }
+    .alg-mastery-label--grasp { color: #89b4fa; }
+    .alg-mastery-label--review { color: #fab387; }
+
+    .alg-mastery-fill {
+        &--familiar { background: #a6e3a1; }
+        &--grasp { background: #89b4fa; }
+        &--review { background: #fab387; }
+    }
+
+    .alg-badge {
+        &--easy { background: rgba(166,227,161,0.18); color: #a6e3a1; }
+        &--medium { background: rgba(249,226,175,0.18); color: #f9e2af; }
+        &--hard { background: rgba(243,139,168,0.18); color: #f38ba8; }
+        &--familiar { background: rgba(166,227,161,0.18); color: #a6e3a1; }
+        &--grasp { background: rgba(137,180,250,0.18); color: #89b4fa; }
+        &--review { background: rgba(250,179,135,0.18); color: #fab387; }
+    }
+}
+
+/* ============================================
+   八股笔记区样式
+   ============================================ */
+
+.section-notes {
+    .section-card {
+        border-left: 4px solid var(--link-color);
+    }
+}

@@ -1,0 +1,37 @@
+# 算法刷题数据
+# 每新增一道题，在下面追加一个 [[problem]] 块
+#
+# id 自增，每次取最大值 + 1
+
+[[problem]]
+  id = 1
+  title = "Two Sum"
+  url = "https://leetcode.cn/problems/two-sum/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-06-15"
+  tags = ["array", "hashmap"]
+  note = "哈希表一次遍历 O(n)，注意 unordered_map 用法"
+
+[[problem]]
+  id = 2
+  title = "Group Anagrams"
+  url = "https://leetcode.cn/problems/group-anagrams/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-06-15"
+  tags = ["hashmap", "string", "sorting"]
+  note = "对每个字符串排序作为 key，哈希表分组"
+
+[[problem]]
+  id = 3
+  title = "Longest Consecutive Sequence"
+  url = "https://leetcode.cn/problems/longest-consecutive-sequence/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-06-15"
+  tags = ["hashmap", "array"]
+  note = "哈希表存端点，只从连续序列起点开始计数 O(n)"
