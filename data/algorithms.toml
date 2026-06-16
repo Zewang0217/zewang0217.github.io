@@ -35,3 +35,25 @@
   date = "2026-06-15"
   tags = ["hashmap", "array"]
   note = "哈希表存端点，只从连续序列起点开始计数 O(n)"
+
+[[problem]]
+  id = 4
+  title = "Container With Most Water"
+  url = "https://leetcode.cn/problems/container-with-most-water/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-06-16"
+  tags = ["array", "two-pointers"]
+  note = "双指针从两端向中间收敛，每次移动短板"
+
+[[problem]]
+  id = 5
+  title = "Move Zeroes"
+  url = "https://leetcode.cn/problems/move-zeroes/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "了解"
+  date = "2026-06-16"
+  tags = ["array", "two-pointers"]
+  note = "快慢指针，慢指针左侧都是非零数"
