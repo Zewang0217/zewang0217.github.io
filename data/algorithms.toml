@@ -57,3 +57,25 @@
   date = "2026-06-16"
   tags = ["array", "two-pointers"]
   note = "快慢指针，慢指针左侧都是非零数"
+
+[[problem]]
+  id = 6
+  title = "3Sum"
+  url = "https://leetcode.cn/problems/3sum/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-06-17"
+  tags = ["array", "two-pointers", "sorting"]
+  note = "排序+双指针，注意去重"
+
+[[problem]]
+  id = 7
+  title = "Trapping Rain Water"
+  url = "https://leetcode.cn/problems/trapping-rain-water/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "熟悉"
+  date = "2026-06-17"
+  tags = ["array", "two-pointers", "stack"]
+  note = "双指针左右夹逼，lmax 和 rmax 取较小的一边累计"
