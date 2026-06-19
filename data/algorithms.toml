@@ -79,3 +79,47 @@
   date = "2026-06-17"
   tags = ["array", "two-pointers", "stack"]
   note = "双指针左右夹逼，lmax 和 rmax 取较小的一边累计"
+
+[[problem]]
+  id = 8
+  title = "Range Sum Query - Immutable"
+  url = "https://leetcode.cn/problems/range-sum-query-immutable/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "了解"
+  date = "2026-06-18"
+  tags = ["prefix-sum", "array", "design"]
+  note = "前缀和数组 s[i+1]=s[i]+nums[i]，查询 O(1)：s[right+1]-s[left]"
+
+[[problem]]
+  id = 9
+  title = "Subarray Sum Equals K"
+  url = "https://leetcode.cn/problems/subarray-sum-equals-k/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-06-18"
+  tags = ["prefix-sum", "hashmap", "subarray"]
+  note = "前缀和 + 哈希表，统计 s[j]-k 出现次数"
+
+[[problem]]
+  id = 10
+  title = "Minimum Window Substring"
+  url = "https://leetcode.cn/problems/minimum-window-substring/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "了解"
+  date = "2026-06-18"
+  tags = ["sliding-window", "hashmap", "string", "two-pointers"]
+  note = "滑动窗口，r 扩张找可行解，l 收缩优化，注意 size() 无符号数陷阱"
+
+[[problem]]
+  id = 11
+  title = "Sliding Window Maximum"
+  url = "https://leetcode.cn/problems/sliding-window-maximum/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "了解"
+  date = "2026-06-18"
+  tags = ["monotonic-queue", "sliding-window", "deque"]
+  note = "单调队列（双端队列），队头存当前窗口最大值"
