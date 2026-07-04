@@ -9,6 +9,7 @@ tags:
   - PyTorch
   - 生成模型
   - Deep Learning
+math: true
 categories:
   - 技术笔记
 ---
