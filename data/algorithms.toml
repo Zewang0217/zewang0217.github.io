@@ -123,3 +123,58 @@
   date = "2026-06-18"
   tags = ["monotonic-queue", "sliding-window", "deque"]
   note = "单调队列（双端队列），队头存当前窗口最大值"
+
+[[problem]]
+  id = 12
+  title = "Maximum Subarray"
+  url = "https://leetcode.cn/problems/maximum-subarray/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-05"
+  tags = ["array", "dp", "subarray"]
+  note = "动态规划，pre = max(pre + x, x)，pre 表示以当前数结尾的最大和"
+
+[[problem]]
+  id = 13
+  title = "Merge Intervals"
+  url = "https://leetcode.cn/problems/merge-intervals/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-05"
+  tags = ["array", "sorting", "greedy", "intervals"]
+  note = "排序 + 贪心，按左端点排序后遍历，重叠就更新右端点"
+
+[[problem]]
+  id = 14
+  title = "Rotate Array"
+  url = "https://leetcode.cn/problems/rotate-array/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-07-05"
+  tags = ["array", "two-pointers", "math"]
+  note = "三次反转：整体反转 + 前 k 反转 + 后 n-k 反转，注意 k %= n"
+
+[[problem]]
+  id = 15
+  title = "Product of Array Except Self"
+  url = "https://leetcode.cn/problems/product-of-array-except-self/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-05"
+  tags = ["array", "prefix-product"]
+  note = "左右乘积数组 L[i]*R[i]，空间可优化到 O(1)"
+
+[[problem]]
+  id = 16
+  title = "First Missing Positive"
+  url = "https://leetcode.cn/problems/first-missing-positive/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "了解"
+  date = "2026-07-05"
+  tags = ["array", "hashmap", "in-place"]
+  note = "原地哈希：把 <=0 的数改成 n+1，再对 [1,n] 用负号打标记，第一个正数位置 i+1 即答案"
