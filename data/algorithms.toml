@@ -178,3 +178,47 @@
   date = "2026-07-05"
   tags = ["array", "hashmap", "in-place"]
   note = "原地哈希：把 <=0 的数改成 n+1，再对 [1,n] 用负号打标记，第一个正数位置 i+1 即答案"
+
+[[problem]]
+  id = 17
+  title = "Set Matrix Zeroes"
+  url = "https://leetcode.cn/problems/set-matrix-zeroes/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-06"
+  tags = ["array", "matrix", "in-place"]
+  note = "用首行首列做标记位，O(1) 额外空间"
+
+[[problem]]
+  id = 18
+  title = "Spiral Matrix"
+  url = "https://leetcode.cn/problems/spiral-matrix/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-07-06"
+  tags = ["array", "matrix", "simulation"]
+  note = "按上下左右四条边走，走过的移除，每轮访问四条边界"
+
+[[problem]]
+  id = 19
+  title = "Rotate Image"
+  url = "https://leetcode.cn/problems/rotate-image/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-06"
+  tags = ["array", "matrix", "math"]
+  note = "原地旋转，先水平翻转再沿主对角线翻转，等价于 90° 顺时针"
+
+[[problem]]
+  id = 20
+  title = "Search a 2D Matrix II"
+  url = "https://leetcode.cn/problems/search-a-2d-matrix-ii/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-07-06"
+  tags = ["array", "matrix", "binary-search"]
+  note = "从右上角开始，比 target 大左移，比 target 大下移，O(m+n)"
