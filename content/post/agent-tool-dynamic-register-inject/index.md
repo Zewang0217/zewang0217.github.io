@@ -173,16 +173,9 @@ tools = [registry.get(name).schema for name in specified_names if name in regist
 
 MCP 的核心价值不是"远程调用"，而是**组织边界隔离**。每个团队独立部署、独立运维自己的 MCP Server，Agent 只通过标准协议消费工具。
 
-```
-┌──────────────────────────────┐
-│      Agent 进程              │
-│  ┌────────────────────────┐  │
-│  │  MCP Client Pool       │──┼──→ 订单团队的 MCP Server
-│  │                        │──┼──→ 物流团队的 MCP Server
-│  │                        │──┼──→ 支付团队的 MCP Server
-│  └────────────────────────┘  │
-└──────────────────────────────┘
-```
+![](dual-path.png)
+
+*图：本地工具链路与 MCP 远程链路双架构*
 
 ### 动态注册：通过协议而非配置
 
