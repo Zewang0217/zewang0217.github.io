@@ -13,418 +13,282 @@ categories:
 image: cover.png
 ---
 
-## 背景：硬编码工具的困境
+## 背景：为什么需要动态工具管理
 
-传统 Agent 的工具调用层，最常见的做法是把工具列表硬编码在代码里：
+假设你正在设计一个大型 Agent 系统。一开始只有 5 个工具，硬编码是自然的——写一个数组，模型调哪个你都知道。但当工具增长到 50 个、200 个时，两个问题会迫使你重新设计。
 
-```python
-tools = [get_weather, search_web, send_email, ...]
-```
+**第一个问题：运维成本。**
 
-这套模式在小规模场景下还能用，但一旦进入生产环境，问题就暴露出来了：
+硬编码意味着每次新增工具都要：改代码 → 走 CI → 重启服务。在微服务架构里没有人能接受这种模式——为什么 Agent 的工具就要这么原始？
 
-- **新增工具要改代码、重启服务**，迭代效率极低
-- **全量注入导致 Token 爆炸**，工具从几十个增长到几百个后，每一次对话都把全部 Schema 塞进 LLM 上下文
-- **模型错选幻觉频发**，工具太多，LLM 选错工具的概率直线上升
-- **运维成本高**，无灰度、无权限管控、无熔断
+**第二个问题，更根本：LLM 的注意力不是无限的。**
 
-解决方案是建立一套 **动态注册、动态发现、动态注入** 的三位一体机制，覆盖本地插件化工具与 MCP 远程工具两条链路。
+当一个 Agent 有 200 个工具时，你不能把 200 个 Schema 都塞进上下文。Token 开销是一方面，更重要的是**选择困难**：工具越多，模型选错工具的概率越大。这是信息过载，不是模型能力问题。
+
+所以动态管理的核心驱动力不是"做不做得到"，而是**大规模下必须解决这两个问题，否则系统不可扩展**。
 
 ---
 
-## 顶层架构设计
+## 顶层设计：三个正交维度
 
-### 核心设计目标
+一个好的动态工具系统，本质上要在三个维度上做解耦：
 
-1. **动态注册** — 本地文件新增、接口推送、MCP 服务接入三种方式，无需修改 Agent 核心代码
-2. **动态发现** — 启动自动扫描存量工具，运行时热感知工具的增删改
-3. **动态注入** — 拒绝全量灌入，支持全局常驻、意图匹配、权限过滤、会话指定四种注入模式
-4. **双端统一** — Local 和 MCP 工具经注册中心归一化为标准接口，上层无感知
-5. **全生命周期管控** — 启用/禁用、灰度、权限、熔断、回滚、审计
+| 维度 | 解决什么问题 |
+|------|-------------|
+| **注册**（工具怎么进来） | 新增工具不重启服务 |
+| **发现**（工具状态怎么感知） | 运行时感知工具的增删和变更 |
+| **注入**（工具怎么进 LLM 上下文） | 不把全部工具塞进一个 prompt |
 
-### 五大核心模块
+三者正交——你可以只做注册不做注入（那注册了也没用），也可以只做注入不做注册（那就还得硬编码）。三个都做，才叫工业级。
 
 ![](architecture.png)
 
-*图：五大核心模块与全局流程关系*
-
-1. **ToolRegisterCenter** — 全局唯一注册中心，存储所有工具元数据、Schema、来源类型、分组标签、权限白名单、启用状态
-2. **LocalToolPluginLoader** — 本地工具插件加载器，扫描、解析、实例化、注册
-3. **MCPClientPool** — MCP 客户端连接池，维护远程服务长连接，主动拉取工具列表
-4. **ToolOrchestrator** — 调用网关，统一拦截、路由、容错
-5. **AgentInjector** — 注入控制器，按会话维度筛选工具子集
-
-### 全局流程
-
-```
-工具新增 → 注册中心录入元数据
-         → 发现模块感知变更，更新内存索引
-         → 注入控制器按需筛选工具集合
-         → 封装 Function Calling Schema 送入 LLM
-         → Agent 发起调用
-         → 网关路由分发至本地执行器或 MCP RPC
-         → 结果标准化回执
-         → 会话结束后回收临时注入工具
-```
+*五个模块各司其职：Registry 管数据、Loader 管本地生命周期、MCP Pool 管远程生命周期、Orchestrator 管调用、Injector 管上下文筛选*
 
 ---
 
 ## 第一链路：本地 Local 工具
 
-### 动态注册
+### 注册：选择"注解 + 目录扫描"而非"配置文件"
 
-约定一个固定插件目录 `./tools/plugins/`，开发者只需新建 Python 文件、继承基类、加上注册注解，零侵入注册。
+为什么选择注解+目录扫描？两个原因：
 
-```python
-# base_tool.py — 基础父类与注册中心
+**理由一：解耦开发流程。**
 
-class ToolRegisterCenter:
-    _instance = None
+如果用配置文件注册（YAML 里写 tools: [...]），新增工具需要改两个文件——工具本身 + 配置。这看起来只是多一步，但在多人协作的工程里，意味着代码审查、合并冲突、配置同步问题。如果用注解，开发者只新建一个文件，框架自动扫描注册，这是真正的"零侵入"。
 
-    def __new__(cls):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-            cls.tool_registry: dict[str, ToolMeta] = {}
-            cls.group_index: dict[str, list[str]] = {}
-            cls.version: int = 0
-        return cls._instance
+**理由二：文件系统本身就是最好的"注册表"。**
 
-    def register(self, meta: "ToolMeta"):
-        if meta.name in self.tool_registry:
-            raise Exception(f"工具 {meta.name} 重复注册")
-        self.tool_registry[meta.name] = meta
-        self.group_index.setdefault(meta.group, []).append(meta.name)
-        self.version += 1
+文件存在 = 工具存在，文件删除 = 工具下线。不需要额外维护一份状态配置，用文件系统的事实状态作为真相来源。
 
-
-class ToolMeta:
-    name: str          # 全局唯一
-    description: str
-    schema: dict       # Function Calling Schema
-    source: str = "local"
-    group: str         # 业务分组
-    enabled: bool = True
-    permission: list[str]
-
-
-# 注册装饰器
-def register_tool(group: str, permission: list):
-    def decorator(cls):
-        meta = ToolMeta(
-            name=cls.tool_name,
-            description=cls.tool_desc,
-            schema=cls.build_schema(),
-            group=group,
-            permission=permission
-        )
-        ToolRegisterCenter().register(meta)
-        return cls
-    return decorator
-```
-
-开发者侧的使用方式：
+伪代码的核心逻辑：
 
 ```python
-@register_tool(group="text", permission=["user", "admin"])
-class TextSummaryTool(BaseLocalTool):
-    tool_name = "text_extract_summary"
-    tool_desc = "对长文本进行精简摘要"
+# 启动时：扫描目录，加载所有 .py 文件
+for py_file in plugin_root.rglob("*.py"):
+    exec_module(py_file)  # 触发 @register_tool 装饰器 → 自动写入注册中心
 
-    @classmethod
-    def build_schema(cls):
-        return {
-            "type": "function",
-            "function": {
-                "name": cls.tool_name,
-                "description": cls.tool_desc,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "content": {"type": "string"}
-                    },
-                    "required": ["content"]
-                }
-            }
-        }
-
-    def run(self, params: dict) -> dict:
-        return {"ok": True, "data": {"summary": params["content"][:300]}}
+# 运行时：watchdog 监听文件增删改
+on_create(py_file)  → exec_module(py_file)
+on_delete(py_file)  → registry.disable(py_file.tool_name)
+on_modify(py_file)  → registry.replace(py_file.tool_name, new_meta)
 ```
 
-### 启动时批量发现
+### 发现：区分"启动发现"和"运行时发现"
 
-`LocalToolPluginLoader` 在初始化阶段递归遍历插件目录，动态 import 所有 `.py` 文件，触发装饰器自动执行注册：
+- **启动发现**是静态的——扫描一遍目录，注册所有工具。简单，快。
+- **运行时发现**是动态的——通过 watchdog 监听文件变更，实时同步注册表。
+
+为什么需要区分？因为**启动发现**处理的是存量，**运行时发现**处理的是增量。存量用扫描（一次性成本），增量用监听（持续成本）。如果运行时也全量扫描，日志里会塞满噪音。
+
+### 注入：四层策略的设计意图
+
+注入是整个系统里最关键也最容易设计过度的部分。四层模式不是一次性想出来的，是从最简单的"全部注入"逐步演化的结果。
+
+**模式 1：全局常驻**
+
+意图：有一些工具确实是每次对话都要用的——获取时间、检查网络、简单的文本处理。这些工具放不放都很别扭：不放的话每个对话都要多一次调用去找它们，放的话它们占了上下文但大部分时候用不到。
+
+权衡：只对调用频率极高、Schema 极轻的工具使用。数量不超过 3-5 个。
 
 ```python
-class LocalToolPluginLoader:
-    def scan_and_register(self, plugin_root: str):
-        for path in Path(plugin_root).rglob("*.py"):
-            if path.name == "__init__.py":
-                continue
-            spec = importlib.util.spec_from_file_location(path.stem, path)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)  # 触发装饰器 → 自动注册
+# 初始化时，从注册中心筛选 core 分组的工具，永久挂载
+self.global_fixed = [
+    meta.schema for meta in registry.values()
+    if meta.group == "core" and meta.enabled
+]
 ```
 
-### 运行时热发现
+**模式 2：意图驱动（核心模式）**
 
-基于 `watchdog` 监听插件目录文件变更：
+这是最主流的方案，也是设计工作量最大的。每一轮用户 query 进来后，先做意图分类，再匹配工具。
 
-| 事件 | 行为 |
-|------|------|
-| 新增 `.py` | 动态导入 → 触发注册 |
-| 修改 `.py` | 删除旧注册 → 重新导入覆盖 |
-| 删除 `.py` | 标记 `enabled=False`，不再注入 |
+为什么不用关键词匹配就完了？因为工具的语义和用户 query 的语义不一定重叠。用户说"帮我查一下这个订单"，但工具名可能是 `tracking_info_lookup`。关键词匹配不到"订单"，但意图分类器应该能映射到。
 
-同时注册中心启动后台定时任务（每 30s），从 Redis 拉取远程配置同步启用/禁用状态，实现集群级同步。
+意图分类器为什么不做成全量 LLM？——成本。每一次对话都调一次大模型做分类，Token 开销大、延迟高。
 
-### 动态注入四层策略
-
-注入行为由 `AgentInjector` 统一管控，**永不一次性全量灌入**：
-
-**模式 1：全局常驻注入**
-
-高频基础工具（时间获取、文本清洗等）在 Agent 初始化时永久挂载，每一轮对话默认携带。
+所以工业级的做法是**双阶段分类**：
 
 ```python
-class AgentInjector:
-    def __init__(self):
-        self.global_fixed: list[dict] = []
-        center = ToolRegisterCenter()
-        for name in center.group_index.get("core", []):
-            meta = center.tool_registry[name]
-            if meta.enabled:
-                self.global_fixed.append(meta.schema)
+def classify(query: str) -> list[str]:
+    # 阶段 1：正则（高速，毫秒级）
+    for pattern, label in RULES:
+        if re.search(pattern, query):
+            return [label]
+
+    # 阶段 2：小模型（兜底，几十毫秒）
+    return bert_model.predict(query)
 ```
 
-**模式 2：意图驱动动态注入（主流方案）**
-
-每一轮用户 query 进入后，先调轻量意图分类器识别业务标签，匹配分组索引拉取对应工具，合并全局常驻工具后生成**本轮专属工具列表**，会话结束自动销毁。
+正则能匹配的直接返回，匹配不到的 fallback 到小模型。这样 95% 的情况都在 5ms 内完成。
 
 ```python
 def inject_by_intent(self, query: str, role: str) -> list[dict]:
     tags = self.classifier.predict(query)
     tools = self.global_fixed.copy()
-
     for tag in tags:
-        for name in self.center.group_index.get(tag, []):
-            meta = self.center.tool_registry[name]
+        for name in self.registry.group_index.get(tag, []):
+            meta = self.registry.get(name)
             if meta.enabled and role in meta.permission:
                 tools.append(meta.schema)
-
-    return deduplicate(tools)
+    return tools[:15]  # 硬上限，防止分类器失误导致工具过多
 ```
 
-意图分类器推荐**双阶段混合**架构：
+**模式 3：权限过滤**
 
-- **阶段 1（高速）**：正则规则匹配（如 `/订单/` → `order`）
-- **阶段 2（兜底）**：轻量 BERT 模型 ONNX Runtime 部署
-
-命中正则直接返回，未命中才走模型，延迟控制在 5ms 以内。
-
-**模式 3：权限过滤注入**
-
-注入前校验用户角色是否在工具 `permission` 白名单内，防止越权调用高危工具。
-
-**模式 4：会话手动指定注入**
-
-多 Agent 协同场景，上层编排层精确指定工具名数组，注入控制器精准取出，最小化幻觉范围。
-
-### 调用路由
-
-LLM 输出工具调用后，`ToolOrchestrator` 根据工具名匹配注册表，实例化对应类执行 `run()`：
+这不是功能，是安全基线。任何注入策略都必须附带权限校验——不仅仅是因为安全合规，更实际的原因是：没有权限过滤，你就无法在同一个 Agent 实例上服务不同角色的用户。
 
 ```python
-class ToolOrchestrator:
-    def dispatch(self, tool_name: str, params: dict, ctx: dict) -> dict:
-        center = ToolRegisterCenter()
-        if tool_name not in center.tool_registry:
-            return {"ok": False, "error": "tool_not_found"}
-
-        meta = center.tool_registry[tool_name]
-
-        # 权限拦截
-        if ctx["role"] not in meta.permission:
-            return {"ok": False, "error": "permission_denied"}
-
-        # 本地执行
-        instance = meta.tool_cls()
-        try:
-            result = instance.run(params)
-            return {"ok": True, "data": result}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+# 注入前，校验用户角色是否在工具 permission 白名单内
+if ctx["role"] not in meta.permission:
+    continue  # 跳过该工具
 ```
+
+**模式 4：会话手动指定**
+
+多 Agent 场景下，父 Agent 知道子 Agent 需要什么工具，不需要意图识别。这种场景下"精确指定"比"猜测"更高效。
+
+```python
+# 上层编排层精确指定工具名，注入控制器精准取出
+tools = [registry.get(name).schema for name in specified_names if name in registry]
+```
+
+### 为什么四层而不是一层？
+
+因为**没有一种注入策略能覆盖所有场景**。全局常驻覆盖高频，意图驱动覆盖主流场景，权限过滤是安全兜底，手动指定覆盖编排场景。四层共存意味着每个场景都能找到最合适的方案，而不是用一把锤子砸所有钉子。
 
 ---
 
 ## 第二链路：MCP 远程工具
 
-MCP（Model Context Protocol）原生面向分布式工具治理，Agent 侧客户端主动完成全生命周期感知。
+### 为什么需要单独一个 MCP 链路？
 
-### 顶层角色
+如果本地工具已经覆盖了所有场景，为什么还要 MCP？
 
-- **Host** — Agent 主进程
-- **Client** — `MultiServerMCPClient` 连接池
-- **Server** — 独立进程或 HTTP 服务，提供工具
+答案在于**所有权边界**。
 
-### 动态注册
+本地工具是 Agent 进程内的——你写代码、你部署、你控制。但真实业务中，大部分工具不属于 Agent 团队。订单查询工具属于订单团队，物流工具属于物流团队，支付工具属于支付团队。
 
-读取 MCP 配置文件，建立连接后通过标准 RPC `list_tools` 拉取全部工具 Schema，归一化为 `ToolMeta` 写入注册中心：
+你不能让每个业务团队都把工具写成 Python 文件放到 Agent 的插件目录里——这是耦合，也是安全灾难。
 
-```python
-async def connect_all(self, config_path: str):
-    configs = json.load(open(config_path))
-    for server_id, conf in configs.items():
-        client = MCPClient(server_id, conf)
-        await client.connect()
+MCP 的核心价值不是"远程调用"，而是**组织边界隔离**。每个团队独立部署、独立运维自己的 MCP Server，Agent 只通过标准协议消费工具。
 
-        tools = await client.rpc_call("list_tools", {})
-        for t in tools:
-            meta = ToolMeta(
-                name=f"{server_id}_{t['name']}",
-                description=t["description"],
-                schema=t["inputSchema"],
-                source=f"mcp:{server_id}",
-                group=conf["group"],
-                permission=conf["permission"],
-            )
-            ToolRegisterCenter().register(meta)
+```
+┌──────────────────────────────┐
+│      Agent 进程              │
+│  ┌────────────────────────┐  │
+│  │  MCP Client Pool       │──┼──→ 订单团队的 MCP Server
+│  │                        │──┼──→ 物流团队的 MCP Server
+│  │                        │──┼──→ 支付团队的 MCP Server
+│  └────────────────────────┘  │
+└──────────────────────────────┘
 ```
 
-配置示例：
+### 动态注册：通过协议而非配置
 
-```json
-{
-  "mcp_servers": {
-    "order_query": {
-      "type": "http",
-      "url": "http://127.0.0.1:8002/mcp/v1",
-      "group": "mcp_order",
-      "permission": ["user", "admin"]
-    }
-  }
-}
-```
-
-### 动态发现三大机制
-
-1. **心跳检测断线重连** — 每 10s ping，重连后重新 `list_tools` 增量对比注册表
-2. **定时轮询** — 每 60s 对所有存活 Server 拉取 `list_tools`，感知内部增删改
-3. **配置热更新** — 监听 Nacos 配置变更，新增 Server 节点自动连接注册，删除则禁用工具
-
-### 注入与调用
-
-MCP 工具注册后与本地工具共用同一个注册中心和 `AgentInjector`，四种注入模式完全复用。唯一区别在网关路由阶段：
+MCP 的注册机制不同于本地工具的"文件扫描"。它基于协议：Client 在握手阶段调用 `list_tools`，Server 返回全部工具 Schema。
 
 ```python
-# ToolOrchestrator 内 MCP 分支
+# Client 启动时：连接每个配置的 Server，拉取工具列表
+for server_id, conf in configs.items():
+    client = await MCPClient(server_id, conf).connect()
+    tools = await client.rpc_call("list_tools")
+    for t in tools:
+        registry.register(ToolMeta(
+            name=f"{server_id}_{t['name']}",  # 用 server_id 做命名空间，避免跨服务重名
+            schema=t["inputSchema"],
+            source=f"mcp:{server_id}",
+            group=conf["group"],
+            permission=conf["permission"],
+        ))
+```
+
+注意 `name` 的命名方式：`server_id + "_" + tool_name`。这不是随意设计的。不同 MCP Server 可能暴露同名工具（比如订单 Server 和退款 Server 都有 `query`），必须用命名空间隔离。
+
+### 发现：三种机制的取舍
+
+| 机制 | 成本 | 实时性 | 适用场景 |
+|------|------|--------|---------|
+| 心跳+重连 | 低 | 中等 | 检测服务崩溃和恢复 |
+| 定时轮询 | 中 | 低（秒级） | 感知工具内部变更 |
+| 配置热更新 | 低 | 高 | 新增/删除 Server 节点 |
+
+为什么不只用一种？因为**每种机制覆盖一种故障模式**：
+- 心跳保活解决"Server 挂了我不知道"
+- 轮询解决"Server 没挂但工具列表变了"
+- 配置热更解决"新增了一台 Server"
+
+只做心跳不做轮询，Server 添加了新工具你得等重启才知道。只做轮询不做心跳，Server 挂了要等下一轮轮询（最多 60s）才能发现。
+
+### 注入统一
+
+MCP 工具注册后，和本地工具共享同一个 `AgentInjector`。注入层不需要区分工具来源——四种模式全部复用。唯一的区别在调用阶段：
+
+```python
+# ToolOrchestrator 路由
 if meta.source.startswith("mcp:"):
-    server_id = meta.source.split(":")[1]
-    client = self.mcp_pool.get(server_id)
-    if not client:
-        return {"ok": False, "error": "mcp_server_offline"}
-
-    resp = await client.rpc_call("call_tool", {
-        "name": original_name,
-        "arguments": params
-    })
-    return {"ok": True, "data": resp}
+    client = mcp_pool.get(server_id)
+    return await client.rpc_call("call_tool", ...)
+else:
+    instance = meta.tool_cls()
+    return instance.run(params)
 ```
 
----
-
-## 幻觉抑制与边界管控
-
-| 策略 | 做法 |
-|------|------|
-| 数量硬上限 | 单次注入 ≤ 15 个工具，超出按匹配度截断 |
-| 禁用过滤 | `enabled=False` 的工具不进入任何链路 |
-| 权限强过滤 | 注入前校验用户角色是否在白名单 |
-| 描述强约束 | Schema 的 `description` 写明禁用场景 |
-| 负样本注入 | 附带"不要调用以下工具"示例 |
-| 注入日志埋点 | 记录每轮注入清单，便于回溯根因 |
+这一行 `if` 是整个双链路设计的精髓——注册中心归一化后，上层业务无感知。
 
 ---
 
-## 全链路容错
+## 幻觉抑制的设计取舍
 
-| 场景 | 处理 |
-|------|------|
-| 工具重名 | 抛出异常，避免静默覆盖 |
-| MCP 服务失联 | 自动剔除对应工具，返回标准化提示 |
-| 本地插件语法错误 | 跳过该文件，告警但不影响全局启动 |
-| 参数校验前置 | 网关调用前做 JSON Schema 校验 |
-| 调用超时 | 本地 500ms / MCP 3000ms，超时熔断 |
-| 临时注入泄漏 | 会话结束自动清空引用 |
+工具注入中的幻觉抑制，本质是**预防而非纠错**。一旦工具进了上下文，LLM 选了它就是选了它，你没法"事后撤回"。
+
+所以所有抑制策略都在注入阶段完成：
+
+| 策略 | 设计意图 |
+|------|---------|
+| 数量硬上限（≤15） | 不是限制工具，是限制选择的复杂度。15 是经验值——超过这个数，模型准确率开始下降 |
+| 禁用过滤 | 紧急熔断通道。线上出问题直接标记 disabled，不需要重新部署 |
+| 权限过滤 | 不是为了"安全"的抽象目标，而是为了让同一个 Agent 能服务不同角色的用户 |
+| 描述约束 | 在 `description` 里写明"不可用于 XXX 场景"——从 prompt 层约束调用意愿 |
+| 注入日志 | 不是为了调试，是为了**归因**。当模型调错工具时，你能回答"为什么这个工具当时在上下文中" |
 
 ---
 
 ## 思考与延伸：从 Tools 到 Skills
 
-这篇文章讨论的是 **Tool（工具）** 的动态管理，但细想一下，这套架构的适用范围远不止工具调用层。
+（本部分为用户补充思考）
 
-### 一个更深层的问题
+> 这套架构是为了解决 tools 的使用问题。能不能迁移到 skills 层面？如何提高 skills 命中率？
 
-当前 Agent 系统面临一个与 Tools 高度相似的问题，发生在 **Skills（技能）** 层面：
+从架构角度看，Tools 和 Skills 面对的困境是**同构的**：
 
-| Tools 痛点 | Skills 对应问题 | 当前做法 |
-|-----------|----------------|---------|
-| 全量工具 Schema 注入 → Token 爆炸 | 所有 Skills 描述列在 prompt 里 | 一次性注入 100+ 条 skill 元信息 |
-| 工具太多 → LLM 选错 | Skills 太多 → Agent 可能忽略正确 skill | 依赖模型注意力，无保障 |
-| 新增工具需重启注册 | 新增 skill 自动可用 | 已解决（skills 文件即注册） |
+| Tools | Skills | 共同本质 |
+|-------|--------|---------|
+| 全量 Schema 注入 → Token 爆炸 | 全量 Skill 列表注入 prompt | 候选集超过模型注意力范围 |
+| 工具太多 → LLM 选错 | Skills 太多 → Agent 忽略 | 信息过载导致选择退化 |
 
-文章中的"意图驱动动态注入"思路完全可以迁移过来：
+同构问题应当用同构方案解决。"按需注入"不是 Tools 层的专属模式，而是 Agent 系统处理**大量可选项**时的通用范式。无论可选项是工具、技能、知识库文档还是 API 端点，当候选集超过有效注意力范围时，就需要一个前置分类层来缩小范围。
 
-### Skills 动态注入架构设想
+如果把这个思路投射到 Skills 管理上：
 
 ```
-用户 query
-    │
-    ▼
-轻量意图分类器（关键词 + embedding 双阶段）
-    │
-    ├─ 置信度高 → 只注入 Top-3/5 匹配 skills → prompt 节省 80%+
-    │
-    └─ 置信度低 → 退化为全量 skill 列表（兜底）
+用户 query → 轻量分类器 → 只注入 Top-3/5 匹配 skills → 节省 80%+ prompt 空间
+                ↓ (低置信度)
+             退化为全量 skill 列表（兜底）
 ```
 
-**关键组件：**
-
-1. **Skill 元数据增强** — 每个 skill 除了 `name`/`description`，增加 `keywords` 字段（如 `tdd, unittest, pytest`）和 `domain` 分类（如 `development`, `devops`, `design`），为分类器提供结构化特征。
-
-2. **双阶段分类器** — 与文章中的工具分类器同构：
-   - **阶段 1（高速）**：关键词匹配用户 query → 命中 skills 名称/关键词/描述
-   - **阶段 2（兜底）**：embedding 向量相似度，匹配不中 keywords 但语义相近的 skills
-
-3. **全局常驻 Skills** — 一小部分基础 skills 永远在 prompt 里：
-   - 记忆管理（`memory-management`）
-   - Skills 搜索入口（`find-skills`）
-   - 全局开发规范（`dev-style`）
-
-4. **Skills Hub 作为"远程注册中心"** — 本地 skills 类似 Local 工具，skills.sh 上的远程 skills 类似 MCP 工具。需要时才拉取，不用本地囤积。
-
-### 与本文架构的对应关系
-
-| 本文工具架构 | Skills 映射 |
-|-------------|------------|
-| ToolRegisterCenter | Skills 元数据索引 |
-| Intent-based injection | 用户 query → skill 匹配 |
-| 全局常驻工具 | 全局常驻 skills |
-| 权限过滤 | 项目上下文/用户偏好过滤 |
-| 数量硬上限（15个） | Top-K 技能数限制 |
-
-这套迁移告诉我们一件事：**"按需注入"不是工具层的专属模式，而是 Agent 系统处理大量可选项时的通用范式。** 无论可选项是工具、技能、知识库文档还是 API 端点，当候选集超过模型的有效注意力范围时，就需要一个前置的分类/检索层来缩小范围。
+这和 Tools 的"意图驱动注入"是同一种架构模式。区别在于：Tools 的注入是 LLM 函数调用层面的，Skills 的注入是 Agent 行为引导层面的。
 
 ---
 
 ## 总结
 
-这套架构的核心思路可以用一句话概括：**所有工具统一注册中心，按需注入，分层隔离**。
+从架构师的视角来看，这套系统的设计没有"创新"，只有**合理的权衡**：
 
-- 本地工具靠**插件目录 + 注解 + 文件监听**实现零侵入上线
-- MCP 工具靠 **list_tools 协议 + 心跳轮询 + 配置热更**实现自动发现
-- 注入层靠**意图分类 + 权限过滤 + 数量硬限**抑制幻觉
-- 调用层靠**统一网关**实现路由、容错、审计统一收口
+- **注册**选注解+目录扫描而非配置 → 为了开发者体验和零侵入
+- **发现**分启动扫描和运行时监听 → 为了区分存量和增量两种工作负载
+- **注入**做四层而非一层 → 因为没有一种策略能覆盖所有场景
+- **Local + MCP 双链路** → 为了组织边界隔离，而非技术层面的"分布式调用"
+- **幻觉抑制在注入阶段做** → 因为预防成本远低于纠错
 
-这套方案不只是面试题的答案，它是生产环境大规模 Agent 系统真正在用的架构模式。
+每个设计决策背后都有一个具体的工程约束在驱动。理解这些约束，比记住架构图更重要。
