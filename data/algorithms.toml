@@ -222,3 +222,36 @@
   date = "2026-07-06"
   tags = ["array", "matrix", "binary-search"]
   note = "从右上角开始，比 target 大左移，比 target 大下移，O(m+n)"
+
+[[problem]]
+  id = 21
+  title = "Reverse Linked List"
+  url = "https://leetcode.cn/problems/reverse-linked-list/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-08-14"
+  tags = ["linked-list"]
+  note = "迭代三指针反转：prev/cur/nex 逐个翻转指向"
+
+[[problem]]
+  id = 22
+  title = "Palindrome Linked List"
+  url = "https://leetcode.cn/problems/palindrome-linked-list/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-08-14"
+  tags = ["linked-list", "two-pointers", "recursion"]
+  note = "两种写法：递归回溯前后比较 / 快慢指针找中点+反转后半段比较，注意奇偶中点差异"
+
+[[problem]]
+  id = 23
+  title = "Intersection of Two Linked Lists"
+  url = "https://leetcode.cn/problems/intersection-of-two-linked-lists/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "需复习"
+  date = "2026-07-13"
+  tags = ["linked-list", "hashset", "two-pointers"]
+  note = "哈希集合存 A 节点再遍历 B 找首个命中；双指针法可 O(1) 空间"
