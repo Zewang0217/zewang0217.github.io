@@ -11,7 +11,7 @@ tags:
     - LLM
     - 复盘
 categories:
-    - 技术笔记
+    - 八股笔记
 math: true
 ---
 

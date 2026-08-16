@@ -255,3 +255,25 @@
   date = "2026-07-13"
   tags = ["linked-list", "hashset", "two-pointers"]
   note = "哈希集合存 A 节点再遍历 B 找首个命中；双指针法可 O(1) 空间"
+
+[[problem]]
+  id = 24
+  title = "Linked List Cycle"
+  url = "https://leetcode.cn/problems/linked-list-cycle/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-08-16"
+  tags = ["linked-list", "two-pointers", "hashset"]
+  note = "快慢指针判环：slow 走一步 fast 走两步，相遇即有环；也可用哈希集合记录访问过的节点"
+
+[[problem]]
+  id = 25
+  title = "Linked List Cycle II"
+  url = "https://leetcode.cn/problems/linked-list-cycle-ii/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "需复习"
+  date = "2026-08-16"
+  tags = ["linked-list", "two-pointers", "hashset"]
+  note = "判环后找入口：相遇点与头节点同步各走一步，再次相遇即环入口；需理解相遇点到入口的距离关系"
