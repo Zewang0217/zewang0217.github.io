@@ -89,6 +89,51 @@ if __name__ == "__main__":
     main()
 ```
 
+这道题在 CodeFun2000 上的原题是 **P5198**（https://codefun2000.com/ide/P5198），可以上去刷题评测。我自己用 C++ 又写了一遍（机考常用语言，逻辑和 Python 版完全一致）：
+
+```cpp
+// 我的 C++ 版 —— CodeFun2000 P5198
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+vector<int> solve(const vector<pair<int, int>>& p, int e, int m) {
+    int n = p.size();
+    vector<bool> core(n, false); // 记录是否是核心
+
+    // 统计每一个基站的邻域数量, 判断是否为核心点
+    for (int i = 0; i < n; i++) {
+        int cnt = 0;
+        for (int j = 0; j < n; j++) {
+            int dist = abs(p[i].first - p[j].first) + abs(p[i].second - p[j].second);
+            if (dist <= e) cnt++;
+        }
+        if (cnt >= m) core[i] = true;
+    }
+
+    // 默认所有基站均为噪声点
+    vector<int> ans(n, 2);
+    for (int i = 0; i < n; i++) {
+        if (core[i]) ans[i] = 0;
+        else {
+            for (int j = 0; j < n; j++) {
+                if (core[j]) {
+                    int dist = abs(p[i].first - p[j].first) + abs(p[i].second - p[j].second);
+                    if (dist <= e) {
+                        ans[i] = 1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return ans;
+}
+```
+
+（main 函数读入 n/e/m 和坐标，逐行输出 `solve` 的结果即可。）
+
 这道题本身不难，值得记住的是它背后的 DBSCAN：核心点做种子、密度可达做簇扩展。机考只考了属性判定，但理解完整算法才能应对变体。
 
 ### 第 2 题：多 Agent 协作任务调度（300 分，DP 最优+次优状态）
@@ -373,5 +418,6 @@ Householder 反射矩阵：$H = I - \dfrac{2vv^T}{v^T v}$（$v$ 是单位向量�
 ## 来源
 
 - 题目与官方解析：CodeFun2000.com 华为机考 AI 方向 8 月 5 日场次（塔子哥）
+- 第 1 题（基站空间重叠区域识别）原题刷题入口：https://codefun2000.com/ide/P5198
 - GSPO 论文：Group Sequence Policy Optimization（Qwen3），https://arxiv.org/abs/2507.18071
 - 备注：选择题 #3-#10 的原题数值在转贴时丢失，本文以通式和方法呈现，未编造数据。
