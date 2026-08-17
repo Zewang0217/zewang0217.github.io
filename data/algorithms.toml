@@ -277,3 +277,25 @@
   date = "2026-08-16"
   tags = ["linked-list", "two-pointers", "hashset"]
   note = "判环后找入口：相遇点与头节点同步各走一步，再次相遇即环入口；需理解相遇点到入口的距离关系"
+
+[[problem]]
+  id = 26
+  title = "Add Two Numbers"
+  url = "https://leetcode.cn/problems/add-two-numbers/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-08-17"
+  tags = ["linked-list", "math"]
+  note = "链表逐位相加，carry 进位，注意最高位的进位"
+
+[[problem]]
+  id = 27
+  title = "Merge Two Sorted Lists"
+  url = "https://leetcode.cn/problems/merge-two-sorted-lists/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-08-17"
+  tags = ["linked-list", "two-pointers", "recursion"]
+  note = "虚拟头节点 + 双指针归并；递归写法更简洁"
