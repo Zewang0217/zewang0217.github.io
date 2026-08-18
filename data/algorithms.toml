@@ -299,3 +299,25 @@
   date = "2026-08-17"
   tags = ["linked-list", "two-pointers", "recursion"]
   note = "虚拟头节点 + 双指针归并；递归写法更简洁"
+
+[[problem]]
+  id = 28
+  title = "Remove Nth Node From End of List"
+  url = "https://leetcode.cn/problems/remove-nth-node-from-end-of-list/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-08-18"
+  tags = ["linked-list", "two-pointers"]
+  note = "先遍历算长度，虚拟头节点走到 size-n 位置删除；dummy 处理删头节点的情况"
+
+[[problem]]
+  id = 29
+  title = "Swap Nodes in Pairs"
+  url = "https://leetcode.cn/problems/swap-nodes-in-pairs/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "熟悉"
+  date = "2026-08-18"
+  tags = ["linked-list", "two-pointers"]
+  note = "虚拟头节点 + 三指针 prev/first/second 两两交换相邻节点，注意奇数节点时的终止条件"
