@@ -321,3 +321,25 @@
   date = "2026-08-18"
   tags = ["linked-list", "two-pointers"]
   note = "虚拟头节点 + 三指针 prev/first/second 两两交换相邻节点，注意奇数节点时的终止条件"
+
+[[problem]]
+  id = 30
+  title = "Copy List with Random Pointer"
+  url = "https://leetcode.cn/problems/copy-list-with-random-pointer/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "需复习"
+  date = "2026-08-19"
+  tags = ["linked-list", "hashmap"]
+  note = "哈希表 old_to_new 第一遍复制节点，第二遍连 next/random 指针"
+
+[[problem]]
+  id = 31
+  title = "Reverse Nodes in k-Group"
+  url = "https://leetcode.cn/problems/reverse-nodes-in-k-group/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "需复习"
+  date = "2026-08-19"
+  tags = ["linked-list", "recursion"]
+  note = "虚拟头节点 + 每 k 个一组局部反转，不足 k 个直接返回"
