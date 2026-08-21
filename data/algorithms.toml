@@ -343,3 +343,14 @@
   date = "2026-08-19"
   tags = ["linked-list", "recursion"]
   note = "虚拟头节点 + 每 k 个一组局部反转，不足 k 个直接返回"
+
+[[problem]]
+  id = 32
+  title = "Sort List"
+  url = "https://leetcode.cn/problems/sort-list/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "需复习"
+  date = "2026-08-20"
+  tags = ["linked-list", "sorting", "divide-and-conquer", "two-pointers"]
+  note = "链表归并排序：快慢指针找中点拆两半，分治排序后 merge，注意 fast 起点快一个取左中点"
