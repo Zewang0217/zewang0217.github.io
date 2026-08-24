@@ -365,3 +365,36 @@
   date = "2026-08-20"
   tags = ["linked-list", "heap", "divide-and-conquer"]
   note = "最小堆：k 条链表头入堆，循环取堆顶接虚拟头，取出后把该链表下一个节点再入堆"
+
+[[problem]]
+  id = 34
+  title = "Maximum Depth of Binary Tree"
+  url = "https://leetcode.cn/problems/maximum-depth-of-binary-tree/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "需复习"
+  date = "2026-08-24"
+  tags = ["binary-tree", "dfs", "recursion"]
+  note = "两种 DFS：递归子问题（左右深度+1 取大）/ 全局变量比较 max"
+
+[[problem]]
+  id = 35
+  title = "Binary Tree Inorder Traversal"
+  url = "https://leetcode.cn/problems/binary-tree-inorder-traversal/"
+  platform = "LeetCode"
+  difficulty = "Easy"
+  mastery = "熟悉"
+  date = "2026-08-24"
+  tags = ["binary-tree", "dfs", "recursion"]
+  note = "DFS 递归中序遍历（左→根→右），带 ACM 模式建树 main"
+
+[[problem]]
+  id = 36
+  title = "LRU Cache"
+  url = "https://leetcode.cn/problems/lru-cache/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "需复习"
+  date = "2026-08-21"
+  tags = ["design", "hashmap", "linked-list"]
+  note = "哈希表 + 双向链表 O(1)，头尾哨兵节点，get/put 移到头部"
