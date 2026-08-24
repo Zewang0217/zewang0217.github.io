@@ -354,3 +354,14 @@
   date = "2026-08-20"
   tags = ["linked-list", "sorting", "divide-and-conquer", "two-pointers"]
   note = "链表归并排序：快慢指针找中点拆两半，分治排序后 merge，注意 fast 起点快一个取左中点"
+
+[[problem]]
+  id = 33
+  title = "Merge k Sorted Lists"
+  url = "https://leetcode.cn/problems/merge-k-sorted-lists/"
+  platform = "LeetCode"
+  difficulty = "Hard"
+  mastery = "需复习"
+  date = "2026-08-20"
+  tags = ["linked-list", "heap", "divide-and-conquer"]
+  note = "最小堆：k 条链表头入堆，循环取堆顶接虚拟头，取出后把该链表下一个节点再入堆"
