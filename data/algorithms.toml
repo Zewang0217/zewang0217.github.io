@@ -398,3 +398,25 @@
   date = "2026-08-21"
   tags = ["design", "hashmap", "linked-list"]
   note = "哈希表 + 双向链表 O(1)，头尾哨兵节点，get/put 移到头部"
+
+[[problem]]
+  id = 37
+  title = "Path Sum III"
+  url = "https://leetcode.cn/problems/path-sum-iii/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-08-26"
+  tags = ["binary-tree", "dfs", "recursion"]
+  note = "解法一：双重 DFS（外层 dfs 枚举起点，内层 findTarget 沿路径累计 sum）"
+
+[[problem]]
+  id = 38
+  title = "Path Sum III (前缀和解法)"
+  url = "https://leetcode.cn/problems/path-sum-iii/"
+  platform = "LeetCode"
+  difficulty = "Medium"
+  mastery = "了解"
+  date = "2026-08-26"
+  tags = ["binary-tree", "dfs", "recursion", "hashmap", "prefix-sum"]
+  note = "解法二：前缀和 + 哈希表，dfs 一次遍历记录 s，命中 cnt[s-target] 即路径，回溯撤销"
