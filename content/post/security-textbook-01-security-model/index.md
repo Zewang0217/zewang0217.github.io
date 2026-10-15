@@ -12,7 +12,7 @@ draft: false
 toc: true
 ---
 
-[安全教材目录](/p/security-textbook/) · 第 1 章
+[安全教材目录](/p/security-textbook/) · 第 1 章 · [下一章](/p/security-textbook-02-attacker-model/)
 
 一个第三方 skill 让助手把项目里的文件发到外部。分析这次失败，需要追踪三个位置：攻击者写了什么、模型建议了什么、执行环境最终做了什么。工具成功执行的那一步，决定了文本影响是否变成真实副作用。
 
