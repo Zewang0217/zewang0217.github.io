@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#444"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#c62828"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="30" text-anchor="middle" font-size="22" font-weight="700" fill="#1a1a1a">两次 memcpy 与 rbuf 分配的边界</text>
+
+  <!-- left neighbor + redzone -->
+  <rect x="30" y="90" width="76" height="52" fill="#f2f2f2" stroke="#999"/>
+  <text x="68" y="120" text-anchor="middle" font-size="14" fill="#555">相邻堆对象</text>
+  <rect x="106" y="90" width="34" height="52" fill="#ffd9d9" stroke="#c62828" stroke-dasharray="4 2"/>
+  <text x="123" y="80" text-anchor="middle" font-size="13" fill="#c62828">红区</text>
+
+  <!-- allocation -->
+  <rect x="140" y="90" width="610" height="52" fill="#e3f2fd" stroke="#1565c0"/>
+  <rect x="140" y="90" width="26" height="52" fill="#bbdefb" stroke="#1565c0"/>
+  <rect x="166" y="90" width="42" height="52" fill="#90caf9" stroke="#1565c0"/>
+  <text x="153" y="80" text-anchor="middle" font-size="13" fill="#1565c0">头 5B</text>
+  <text x="187" y="80" text-anchor="middle" font-size="13" fill="#0d47a1">内容 20B</text>
+  <text x="465" y="80" text-anchor="middle" font-size="13" fill="#5d87a8">缓冲其余 ≈17.7KB:freelist 复用不清零,残留旧连接数据</text>
+
+  <!-- right redzone + neighbor -->
+  <rect x="750" y="90" width="34" height="52" fill="#ffd9d9" stroke="#c62828" stroke-dasharray="4 2"/>
+  <text x="767" y="80" text-anchor="middle" font-size="13" fill="#c62828">红区</text>
+  <rect x="784" y="90" width="88" height="52" fill="#f2f2f2" stroke="#999"/>
+  <text x="828" y="112" text-anchor="middle" font-size="14" fill="#555">相邻堆对象</text>
+  <text x="828" y="130" text-anchor="middle" font-size="13" fill="#777">(其他缓冲/密钥大数)</text>
+
+  <text x="445" y="164" text-anchor="middle" font-size="15" font-weight="600" fill="#1565c0">rbuf 分配 17736B = 16384(最大明文)+ 320(加密开销)+ 1024(压缩开销)+ 8(头与对齐)</text>
+
+  <!-- pl pointer -->
+  <line x1="187" y1="142" x2="187" y2="176" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="187" y="194" text-anchor="middle" font-size="14" fill="#444">pl = memcpy 源(记录内容第 3 字节起)</text>
+
+  <!-- 0x4000 -->
+  <line x1="190" y1="222" x2="640" y2="222" stroke="#2e7d32" stroke-width="4" marker-end="url(#arr)"/>
+  <text x="450" y="214" text-anchor="middle" font-size="15" fill="#2e7d32">声明 0x4000(16384):越过了记录内容,但仍在分配内 → ASan 不报(生产环境同样泄露)</text>
+
+  <!-- 0xffff -->
+  <line x1="190" y1="262" x2="850" y2="262" stroke="#c62828" stroke-width="4" marker-end="url(#arrR)"/>
+  <text x="480" y="254" text-anchor="middle" font-size="15" fill="#c62828">声明 0xFFFF(65535):跨过分配右边界、第一字节落进红区 → ASan 报 READ of size 65535</text>
+</svg>
