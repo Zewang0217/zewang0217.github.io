@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 540" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="940" height="540" fill="#ffffff"/>
+
+  <!-- 标题 -->
+  <text x="470" y="34" text-anchor="middle" font-size="19" font-weight="bold" fill="#111827">只采到单向流时,缺口为什么不可见</text>
+
+  <!-- 两条生命线 -->
+  <g>
+    <rect x="60" y="52" width="180" height="46" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+    <text x="150" y="80" text-anchor="middle" font-size="17" fill="#1e1b4b">客户端</text>
+    <line x1="150" y1="98" x2="150" y2="340" stroke="#c7d2fe" stroke-width="2"/>
+
+    <rect x="700" y="52" width="180" height="46" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+    <text x="790" y="80" text-anchor="middle" font-size="17" fill="#064e3b">服务器</text>
+    <line x1="790" y1="98" x2="790" y2="340" stroke="#a7f3d0" stroke-width="2"/>
+  </g>
+
+  <!-- 抓包点(只在客户端→服务器路径上) -->
+  <g>
+    <rect x="400" y="110" width="150" height="120" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="2.5"/>
+    <text x="475" y="138" text-anchor="middle" font-size="16" font-weight="bold" fill="#7c2d12">抓包点</text>
+    <text x="475" y="162" text-anchor="middle" font-size="14" fill="#7c2d12">SPAN/TAP 只在</text>
+    <text x="475" y="182" text-anchor="middle" font-size="14" fill="#7c2d12">客户端→服务器</text>
+    <text x="475" y="202" text-anchor="middle" font-size="14" fill="#7c2d12">方向上</text>
+  </g>
+
+  <!-- 客户端→服务器 三条消息(经过抓包点) -->
+  <g font-size="15">
+    <line x1="150" y1="130" x2="790" y2="130" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#a1)"/>
+    <text x="285" y="122" fill="#3730a3">① SYN(被抓到)</text>
+
+    <line x1="150" y1="185" x2="790" y2="185" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#a1)"/>
+    <text x="295" y="177" fill="#3730a3">② GET /a.txt 数据段(被抓到)</text>
+
+    <line x1="150" y1="240" x2="790" y2="240" stroke="#4f46e5" stroke-width="2.5" marker-end="url(#a1)"/>
+    <text x="330" y="232" fill="#3730a3">③ FIN(被抓到)</text>
+  </g>
+
+  <!-- 服务器→客户端 回程(不经过抓包点,灰色虚线绕行) -->
+  <g font-size="15">
+    <path d="M 790 155 C 940 170, 940 250, 940 285 C 940 320, 500 330, 155 305" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="7,6" marker-end="url(#a2)"/>
+    <text x="560" y="322" fill="#64748b" text-anchor="middle">SYN-ACK、响应、ACK、FIN:真实发生过,但没有一条经过抓包点</text>
+  </g>
+
+  <!-- 判定面板 -->
+  <g font-size="16">
+    <rect x="60" y="355" width="820" height="160" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+    <text x="80" y="386" font-weight="bold" fill="#0f172a">Zeek 的视图(实测,runs/04 clientonly 变体):</text>
+    <text x="80" y="416" fill="#0f172a">· 请求方向完整 → http.log 有 GET /a.txt(请求行、method 都在)</text>
+    <text x="80" y="444" fill="#0f172a">· 响应方向序号从未推进 → 无证据可反推缺口 → missed_bytes=0,无 content_gap</text>
+    <text x="80" y="472" fill="#0f172a">· 唯一线索:weird.log 的 possible_split_routing——不看 weird,</text>
+    <text x="80" y="498" fill="#0f172a">  单向缺失在 conn.log 里是“干净”的</text>
+  </g>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 z" fill="#4f46e5"/>
+    </marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 560" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <!-- 背景 -->
+  <rect x="0" y="0" width="940" height="560" fill="#ffffff"/>
+
+  <!-- 顶部路径 -->
+  <g font-size="17" text-anchor="middle">
+    <rect x="20"  y="30" width="150" height="52" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+    <text x="95" y="52" fill="#1e1b4b">客户端</text>
+    <text x="95" y="72" fill="#1e1b4b" font-size="14">scapy(真实握手)</text>
+
+    <rect x="270" y="30" width="170" height="52" rx="8" fill="#fff7ed" stroke="#f59e0b" stroke-width="2"/>
+    <text x="355" y="52" fill="#7c2d12">监测器抓包点</text>
+    <text x="355" y="72" fill="#7c2d12" font-size="14">tcpdump → Zeek</text>
+
+    <rect x="540" y="30" width="150" height="52" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+    <text x="615" y="52" fill="#0f172a">路由器 netns</text>
+    <text x="615" y="72" fill="#0f172a" font-size="14">TTL−1,=0 则丢弃</text>
+
+    <rect x="770" y="30" width="150" height="52" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+    <text x="845" y="52" fill="#064e3b">服务器端点</text>
+    <text x="845" y="72" fill="#064e3b" font-size="14">内核 TCP + echo</text>
+  </g>
+
+  <!-- E1 包轨迹 -->
+  <g font-size="16">
+    <text x="24" y="132" fill="#7f1d1d" font-weight="bold">E1 坏校验和段(chksum=0xBAD0,合法 TTL)</text>
+    <line x1="120" y1="150" x2="355" y2="150" stroke="#ef4444" stroke-width="3" marker-end="url(#arrRed)"/>
+    <line x1="440" y1="150" x2="615" y2="150" stroke="#ef4444" stroke-width="3" marker-end="url(#arrRed)"/>
+    <line x1="690" y1="150" x2="845" y2="150" stroke="#ef4444" stroke-width="3" marker-end="url(#arrRed)"/>
+    <text x="355" y="142" text-anchor="middle" fill="#7f1d1d" font-size="14">抓包点看到 ✅</text>
+    <text x="615" y="142" text-anchor="middle" fill="#7f1d1d" font-size="14">路由器放行 ✅</text>
+    <!-- 服务器处丢弃 -->
+    <g>
+      <circle cx="845" cy="150" r="14" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5"/>
+      <line x1="836" y1="141" x2="854" y2="159" stroke="#ef4444" stroke-width="2.5"/>
+      <line x1="854" y1="141" x2="836" y2="159" stroke="#ef4444" stroke-width="2.5"/>
+    </g>
+    <text x="845" y="185" text-anchor="middle" fill="#7f1d1d" font-size="14">内核校验失败 → 丢弃</text>
+  </g>
+
+  <!-- E2 包轨迹 -->
+  <g font-size="16">
+    <text x="24" y="228" fill="#7c2d12" font-weight="bold">E2 TTL=1 段(校验和完全合法)</text>
+    <line x1="120" y1="246" x2="355" y2="246" stroke="#f59e0b" stroke-width="3" marker-end="url(#arrAmber)"/>
+    <line x1="440" y1="246" x2="615" y2="246" stroke="#f59e0b" stroke-width="3" marker-end="url(#arrAmber)"/>
+    <text x="355" y="238" text-anchor="middle" fill="#7c2d12" font-size="14">抓包点看到 ✅</text>
+    <!-- 路由器处丢弃 -->
+    <g>
+      <circle cx="615" cy="246" r="14" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
+      <line x1="606" y1="237" x2="624" y2="255" stroke="#d97706" stroke-width="2.5"/>
+      <line x1="624" y1="237" x2="606" y2="255" stroke="#d97706" stroke-width="2.5"/>
+    </g>
+    <text x="615" y="281" text-anchor="middle" fill="#7c2d12" font-size="14">TTL 减到 0 → 路由器丢弃</text>
+    <line x1="690" y1="246" x2="845" y2="246" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,6"/>
+    <text x="845" y="238" text-anchor="middle" fill="#64748b" font-size="14">端点从未收到</text>
+  </g>
+
+  <!-- 三个裁决框 -->
+  <g font-size="16">
+    <text x="24" y="330" font-weight="bold" fill="#111827">三个视角的裁决(实测,runs/06)</text>
+
+    <rect x="24" y="345" width="280" height="180" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+    <text x="164" y="372" text-anchor="middle" font-weight="bold" fill="#0f172a">端点(echo 逐字节记录)</text>
+    <text x="44" y="404" fill="#0f172a">E1:GET /e1-(坏段被内核丢弃)</text>
+    <text x="44" y="432" fill="#0f172a">E2:GET /e2-(段死于路由器)</text>
+    <text x="44" y="466" fill="#475569" font-size="14">多出的字节从未交付应用。</text>
+    <text x="44" y="492" fill="#475569" font-size="14">这是唯一"真正发生了"的视图。</text>
+
+    <rect x="330" y="345" width="280" height="180" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+    <text x="470" y="372" text-anchor="middle" font-weight="bold" fill="#1e3a8a">Zeek 默认(验证校验和)</text>
+    <text x="350" y="404" fill="#1e3a8a">E1:丢弃(与端点一致,</text>
+    <text x="350" y="428" fill="#1e3a8a">    history 记 C)✅</text>
+    <text x="350" y="456" fill="#1e3a8a">E2:采纳 → http.log 记下</text>
+    <text x="350" y="480" fill="#1e3a8a">    /e2-VANISHED ❌(无痕)</text>
+    <text x="350" y="508" fill="#475569" font-size="14">missed_bytes=0,无 weird。</text>
+
+    <rect x="636" y="345" width="280" height="180" rx="10" fill="#fdf2f8" stroke="#ec4899" stroke-width="2"/>
+    <text x="776" y="372" text-anchor="middle" font-weight="bold" fill="#831843">Zeek -C(不验证校验和)</text>
+    <text x="656" y="404" fill="#831843">E1:采纳 → /e1--INSERTED ❌</text>
+    <text x="656" y="432" fill="#831843">E2:采纳 → /e2-VANISHED ❌</text>
+    <text x="656" y="466" fill="#475569" font-size="14">-C 能救回 offload 采集的流量</text>
+    <text x="656" y="490" fill="#475569" font-size="14">(§3.1),同时打开经典插入面:</text>
+    <text x="656" y="514" fill="#475569" font-size="14">校验和验证没有免费关闭项。</text>
+  </g>
+
+  <defs>
+    <marker id="arrRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 z" fill="#ef4444"/>
+    </marker>
+    <marker id="arrAmber" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+</svg>
